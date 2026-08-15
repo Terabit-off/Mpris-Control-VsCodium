@@ -1,65 +1,63 @@
-# mpris-control README
+# MPRIS Music Control
 
-This is the README for your extension "mpris-control". After writing up a brief description, we recommend including the following sections.
+A beautiful and lightweight music widget that allows you to control your system's media players directly from the sidebar of VSCodium and VS Code. Control your playback seamlessly without breaking your coding workflow.
 
-## Features
+<p align="center">
+  <img src="media/screenshot.png" alt="MPRIS Music Control Preview" width="300" />
+</p>
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+## 🌟 Features
 
-For example if there is an image subfolder under your extension project workspace:
+- **Explorer Integration:** The player fits neatly right beneath your standard file explorer view.
+- **Interactive Timeline:** Full support for tracking position and seeking through songs by clicking on the progress bar.
+- **Adaptive Theme Styling:** Automatically inherits and adapts to your active VSCodium/VS Code color theme.
+- **Placeholder:** Automatically falls back to a clean local asset image if a track lacks cover art or if the player is idle.
+- **Universal Player Support:** Works with any media player adhering to the MPRIS specification (Spotify, VLC, Audacious, or YouTube/Yandex.Music, sources playing inside Firefox/Chromium-based browsers).
 
-\!\[feature X\]\(images/feature-x.png\)
+## 📦 System Requirements (Crucial)
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+To interface with the system D-Bus on Linux, this extension relies on the `playerctl` CLI tool.
 
-## Requirements
+Please ensure it is installed on your Linux machine before using the extension:
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+- **Ubuntu / Debian / Mint / Pop!\_OS:**
+  ```bash
+  sudo apt update && sudo apt install playerctl
+  ```
+- **Arch Linux / Manjaro:**
+  ```bash
+  sudo pacman -S playerctl
+  ```
+- **Fedora / RHEL:**
+  ```bash
+  sudo dnf install playerctl
+  ```
 
-## Extension Settings
+## 🚀 Setup & Usage
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+1. Install the extension from the Open VSX Registry / VS Marketplace, or install it manually via a compiled `.vsix` file.
+2. Open the **Explorer** tab on the left sidebar.
+3. Look at the very bottom for the **Music (MPRIS)** panel.
+4. Launch any media player on your system and play a track—the widget will instantly grab the album art, metadata, and live playback state.
 
-For example:
+## 🛠️ Local Development & Building
 
-This extension contributes the following settings:
+If you wish to compile the extension into a standalone `.vsix` file:
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+1. Install the required Node dependencies:
+   ```bash
+   npm install
+   ```
+2. Build the package for VSCodium (Open VSX):
+   ```bash
+   npx ovsx package
+   ```
+3. Build the package for the original VS Code distribution:
+   ```bash
+   npm install -g @vscode/vsce
+   vsce package
+   ```
 
-## Known Issues
+## 📄 License
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux)
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux)
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+This project is licensed under the terms of the [MIT License](LICENSE). Copyright (c) 2026 [terabit-core].

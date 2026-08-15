@@ -1,8 +1,8 @@
 {
   "name": "mpris-control",
   "displayName": "mpris music control",
-  "description": "Control your music right here",
-  "version": "1.0.1",
+  "description": "Control your music from MPRIS right here",
+  "version": "1.1.1",
   "publisher": "terabit-core",
   "author": {
     "name": "terabit",
@@ -14,8 +14,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com"
+    "url": "https://github.com/Terabit-off/Mpris-Control-VsCodium.git"
   },
+  "icon": "media/pfp.jpg",
   "categories": [
     "Other"
   ],
@@ -29,7 +30,7 @@
         {
           "type": "webview",
           "id": "mprisMusicWebview",
-          "name": "Музыка (MPRIS)",
+          "name": "Music",
           "icon": "$(library)"
         }
       ]

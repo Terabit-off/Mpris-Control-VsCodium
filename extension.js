@@ -10,7 +10,6 @@ function activate(context) {
     vscode.window.registerWebviewViewProvider("mprisMusicWebview", provider),
   );
 
-  // Опрос плеера раз в 1 секунду для плавного обновления таймлайна
   pollInterval = setInterval(() => {
     provider.updatePlaybackStatus();
   }, 1000);
@@ -25,7 +24,6 @@ class MusicWebviewViewProvider {
   resolveWebviewView(webviewView) {
     this._view = webviewView;
 
-    // Разрешаем доступ к корню системы и к папке нашего расширения
     webviewView.webview.options = {
       enableScripts: true,
       localResourceRoots: [vscode.Uri.file("/"), this._extensionUri],
@@ -33,7 +31,6 @@ class MusicWebviewViewProvider {
 
     webviewView.webview.html = this._getHtmlForWebview();
 
-    // Переменная для хранения длины трека в секундах в области видимости провайдера
     this.trackDuration = 0;
 
     webviewView.webview.onDidReceiveMessage((data) => {
@@ -48,7 +45,6 @@ class MusicWebviewViewProvider {
           exec("playerctl previous");
           break;
         case "seek":
-          // Вычисляем целевую секунду: полная длина * процент / 100
           if (this.trackDuration > 0) {
             const targetSecond = Math.floor(
               (this.trackDuration * data.value) / 100,
@@ -87,14 +83,15 @@ class MusicWebviewViewProvider {
       const formatTime = (s) =>
         `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
-      // ГЕНЕРАЦИЯ ПУТИ К ЛОКАЛЬНОЙ КАРТИНКЕ В ПАПКЕ MEDIA
-      // Замените 'placeholder.png' на точное имя вашего файла (например, cover.svg)
-      const localArtUri = vscode.Uri.joinPath(this._extensionUri, "pfp.jpg");
+      const localArtUri = vscode.Uri.joinPath(
+        this._extensionUri,
+        "media/pfp.jpg",
+      );
       const defaultExtensionArt = this._view.webview
         .asWebviewUri(localArtUri)
         .toString();
 
-      let finalArt = defaultExtensionArt; // По умолчанию используем локальную заглушку
+      let finalArt = defaultExtensionArt;
 
       if (artUrl && artUrl.trim() !== "") {
         const cleanedUrl = artUrl.trim();
@@ -114,8 +111,8 @@ class MusicWebviewViewProvider {
       this._view.webview.postMessage({
         type: "update",
         isPlaying: status === "Playing",
-        title: title || "Неизвестный трек",
-        artist: artist || "Неизвестный автор",
+        title: title || "Unknown",
+        artist: artist || "Unknown",
         timeCurrent: formatTime(current),
         timeTotal: total > 0 ? formatTime(total) : "--:--",
         progress: progress,
@@ -137,7 +134,6 @@ class MusicWebviewViewProvider {
                     .title { font-weight: bold; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
                     .artist { font-size: 11px; opacity: 0.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 6px; }
                     
-                    /* Таймлайн с поддержкой кликов */
 					.timeline-container { display: flex; align-items: center; font-size: 10px; opacity: 0.6; margin-bottom: 6px; }
 					.progress-bar { 
 						flex-grow: 1; 
@@ -152,7 +148,6 @@ class MusicWebviewViewProvider {
 					.progress-bar:hover { height: 8px; border-radius: 4px; }
 					.progress-fill { height: 100%; width: 0%; background: var(--vscode-button-background, #007acc); pointer-events: none; }
 
-                    /* Кнопки */
                     .controls { display: flex; gap: 14px; align-items: center; justify-content: flex-start; }
                     .btn { background: none; border: none; color: var(--vscode-foreground); cursor: pointer; padding: 4px; opacity: 0.8; display: flex; align-items: center; }
                     .btn:hover { opacity: 1; color: var(--vscode-button-background); }
@@ -166,7 +161,7 @@ class MusicWebviewViewProvider {
                 <div id="player" class="player-container" style="display: none;">
                     <img id="art" class="album-art" src="" alt="Cover" />
                     <div class="info-block">
-                        <div id="title" class="title">Загрузка...</div>
+                        <div id="title" class="title">Loading...</div>
                         <div id="artist" class="artist">...</div>
                         
                         <div class="timeline-container">
@@ -191,7 +186,7 @@ class MusicWebviewViewProvider {
                         </div>
                     </div>
                 </div>
-                <div id="offline" class="offline-msg">Плеер не запущен или музыка на паузе</div>
+                <div id="offline" class="offline-msg">No player</div>
 
                 <script>
                     const vscode = acquireVsCodeApi();
@@ -200,16 +195,13 @@ class MusicWebviewViewProvider {
 					function seekTrack(event) {
 						const progressBar = event.currentTarget;
 						const rect = progressBar.getBoundingClientRect();
-						const clickX = event.clientX - rect.left; // Пиксель клика относительно начала полосы
+						const clickX = event.clientX - rect.left;
 						const width = rect.width;
 						
-						// Вычисляем процент (от 0 до 100)
 						const percentage = Math.max(0, Math.min(100, (clickX / width) * 100));
 						
-						// Сразу визуально сдвигаем полосу для отзывчивости интерфейса
 						document.getElementById('progress').style.width = percentage + '%';
 						
-						// Отправляем команду в расширение
 						vscode.postMessage({ command: 'seek', value: percentage });
 					}
 
@@ -234,12 +226,11 @@ class MusicWebviewViewProvider {
                         document.getElementById('progress').style.width = msg.progress + '%';
                         document.getElementById('art').src = msg.artUrl;
 
-                        // Меняем иконку Play/Pause динамически
                         const playIcon = document.getElementById('play-icon');
                         if (msg.isPlaying) {
-                            playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'; // Иконка паузы
+                            playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
                         } else {
-                            playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>'; // Иконка плей
+                            playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
                         }
                     });
                 </script>
