@@ -2,7 +2,7 @@
   "name": "mpris-control",
   "displayName": "mpris music control",
   "description": "Control your music from MPRIS right here",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "publisher": "terabit-core",
   "author": {
     "name": "terabit",
@@ -34,6 +34,60 @@
           "icon": "$(library)"
         }
       ]
+    },
+    "configuration": {
+      "title": "MPRIS Music Control",
+      "properties": {
+        "mprisMusicControl.refreshInterval": {
+          "type": "integer",
+          "default": 1000,
+          "minimum": 500,
+          "maximum": 5000,
+          "description": "How often to poll player and update timeline (in milliseconds)."
+        },
+        "mprisMusicControl.backgroundMode": {
+          "type": "string",
+          "default": "adaptive",
+          "enum": [
+            "adaptive",
+            "custom"
+          ],
+          "enumDescriptions": [
+            "Automatically match color of the current track album art.",
+            "Use a static custom color defined below."
+          ],
+          "description": "Card background color style selection."
+        },
+        "mprisMusicControl.customBackgroundColor": {
+          "type": "string",
+          "default": "#1e1e1e",
+          "description": "Static background color for the card (used if background mode is set to 'custom'). Accepts HEX format."
+        },
+        "mprisMusicControl.backgroundOpacity": {
+          "type": "number",
+          "default": 0.35,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Opacity level for the card background (from 0 to 1)."
+        },
+        "mprisMusicControl.artRadius": {
+          "type": "integer",
+          "default": 4,
+          "minimum": 0,
+          "maximum": 50,
+          "description": "Album art corner radius in pixels (set to 50 for a clean circular view)."
+        },
+        "mprisMusicControl.artSpin": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable continuous vinyl-like spinning rotation effect on album art during active playback."
+        },
+        "mprisMusicControl.fallbackArtPath": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute system path to a custom image file (.png, .jpg, .svg) to use as an idle fallback placeholder. Leave empty for default extension asset."
+        }
+      }
     }
   },
   "scripts": {
@@ -42,7 +96,7 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.125.0",
+    "@types/vscode": "^1.108.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "24.x",
     "eslint": "^10.5.0",

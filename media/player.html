@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      body {
+        font-family: var(--vscode-font-family);
+        color: var(--vscode-foreground);
+        padding: 10px;
+        margin: 0;
+        background: transparent;
+      }
+      .player-container {
+        display: flex;
+        align-items: center;
+        padding: 12px;
+        border-radius: 8px;
+        transition: background 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+      .album-art {
+        width: 64px;
+        height: 64px;
+        object-fit: cover;
+        background: #333;
+        margin-right: 12px;
+        flex-shrink: 0;
+        transition: border-radius 0.3s ease;
+      }
+      .album-art.paused {
+        filter: grayscale(0.4) opacity(0.7);
+        animation-play-state: paused !important; /* Останавливаем вращение на паузе */
+      }
+
+      /* Анимация вращения обложки */
+      .spin-animation {
+        animation: spin 12s linear infinite;
+      }
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .info-block {
+        flex-grow: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .title {
+        font-weight: bold;
+        font-size: 13px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-bottom: 2px;
+      }
+      .artist {
+        font-size: 11px;
+        opacity: 0.7;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-bottom: 6px;
+      }
+
+      /* Таймлайн */
+      .timeline-container {
+        display: flex;
+        align-items: center;
+        font-size: 10px;
+        opacity: 0.6;
+        margin-bottom: 6px;
+      }
+      .progress-bar {
+        flex-grow: 1;
+        height: 6px;
+        background: rgba(255, 255, 255, 0.2);
+        margin: 0 6px;
+        border-radius: 3px;
+        overflow: hidden;
+        cursor: pointer;
+      }
+      .progress-bar:hover {
+        height: 8px;
+        border-radius: 4px;
+      }
+      .progress-fill {
+        height: 100%;
+        width: 0%;
+        background: var(--vscode-button-background, #007acc);
+        pointer-events: none;
+      }
+
+      /* Кнопки */
+      .controls {
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        justify-content: flex-start;
+      }
+      .btn {
+        background: none;
+        border: none;
+        color: var(--vscode-foreground);
+        cursor: pointer;
+        padding: 4px;
+        opacity: 0.8;
+        display: flex;
+        align-items: center;
+      }
+      .btn:hover {
+        opacity: 1;
+        color: var(--vscode-button-background);
+      }
+      .btn svg {
+        width: 16px;
+        height: 16px;
+        fill: currentColor;
+      }
+      .btn-play svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      .offline-msg {
+        text-align: center;
+        opacity: 0.5;
+        padding: 20px;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="player" class="player-container" style="display: none">
+      <img
+        id="art"
+        class="album-art"
+        src=""
+        alt="Cover"
+        crossorigin="anonymous"
+      />
+      <div class="info-block">
+        <div id="title" class="title">Loading...</div>
+        <div id="artist" class="artist">...</div>
+
+        <div class="timeline-container">
+          <span id="time-current">0:00</span>
+          <div class="progress-bar" onclick="seekTrack(event)">
+            <div id="progress" class="progress-fill"></div>
+          </div>
+          <span id="time-total">0:00</span>
+        </div>
+
+        <div class="controls">
+          <button class="btn" onclick="send('prev')">
+            <svg viewBox="0 0 24 24">
+              <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
+            </svg>
+          </button>
+          <button class="btn btn-play" onclick="send('play')">
+            <svg id="play-icon" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </button>
+          <button class="btn" onclick="send('next')">
+            <svg viewBox="0 0 24 24">
+              <path d="M16 6h2v12h-2zm-11 0l8.5 6L5 18z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div id="offline" class="offline-msg">
+      No player. Check `playerctl metadata` in terminal
+    </div>
+
+    <canvas id="canvas" style="display: none" width="10" height="10"></canvas>
+
+    <script>
+      const vscode = acquireVsCodeApi();
+      function send(command) {
+        vscode.postMessage({ command });
+      }
+
+      function seekTrack(event) {
+        const progressBar = event.currentTarget;
+        const rect = progressBar.getBoundingClientRect();
+        const clickX = event.clientX - rect.left;
+        const percentage = Math.max(
+          0,
+          Math.min(100, (clickX / rect.width) * 100),
+        );
+        document.getElementById("progress").style.width = percentage + "%";
+        vscode.postMessage({ command: "seek", value: percentage });
+      }
+
+      let currentR = 0,
+        currentG = 0,
+        currentB = 0;
+      let hasColor = false;
+
+      function updateAdaptiveBackground(imgElement) {
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+        try {
+          ctx.drawImage(imgElement, 0, 0, 10, 10);
+          const imgData = ctx.getImageData(0, 0, 10, 10).data;
+          let r = 0,
+            g = 0,
+            b = 0,
+            count = 0;
+          for (let i = 0; i < imgData.length; i += 4) {
+            r += imgData[i];
+            g += imgData[i + 1];
+            b += imgData[i + 2];
+            count++;
+          }
+          currentR = Math.floor(r / count);
+          currentG = Math.floor(g / count);
+          currentB = Math.floor(b / count);
+          hasColor = true;
+        } catch (e) {
+          hasColor = false;
+        }
+      }
+
+      const artImg = document.getElementById("art");
+      artImg.addEventListener("load", () => {
+        updateAdaptiveBackground(artImg);
+      });
+
+      function hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result
+          ? {
+              r: parseInt(result[1], 16),
+              g: parseInt(result[2], 16),
+              b: parseInt(result[3], 16),
+            }
+          : { r: 30, g: 30, b: 30 };
+      }
+
+      window.addEventListener("message", (event) => {
+        const msg = event.data;
+        const player = document.getElementById("player");
+        const offline = document.getElementById("offline");
+        const s = msg.settings;
+
+        if (msg.type === "offline") {
+          player.style.display = "none";
+          offline.style.display = "block";
+          return;
+        }
+
+        player.style.display = "flex";
+        offline.style.display = "none";
+
+        document.getElementById("title").innerText = msg.title;
+        document.getElementById("artist").innerText = msg.artist;
+        document.getElementById("time-current").innerText = msg.timeCurrent;
+        document.getElementById("time-total").innerText = msg.timeTotal;
+        document.getElementById("progress").style.width = msg.progress + "%";
+
+        if (artImg.src !== msg.artUrl) {
+          artImg.src = msg.artUrl;
+        }
+
+        artImg.style.borderRadius =
+          s.artRadius + (s.artRadius === 50 ? "%" : "px");
+
+        if (s.artSpin && msg.isPlaying) {
+          artImg.classList.add("spin-animation");
+        } else {
+          artImg.classList.remove("spin-animation");
+        }
+
+        if (msg.isPlaying) {
+          artImg.classList.remove("paused");
+        } else {
+          artImg.classList.add("paused");
+        }
+
+        if (s.backgroundMode === "adaptive" && hasColor) {
+          player.style.background = `rgba(${currentR}, ${currentG}, ${currentB}, ${s.backgroundOpacity})`;
+        } else {
+          const rgb = hexToRgb(s.customBackgroundColor);
+          player.style.background = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${s.backgroundOpacity})`;
+        }
+
+        const playIcon = document.getElementById("play-icon");
+        if (msg.isPlaying) {
+          playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+        } else {
+          playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+        }
+      });
+    </script>
+  </body>
+</html>
